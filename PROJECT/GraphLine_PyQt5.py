@@ -31,11 +31,11 @@ class DrawStar(QWidget):
         self.button_2.clicked.connect(self.masplus)
 
     def masmin(self):
-        self.mas *= 1.5
+        self.mas *= 1.3
         self.repaint()
 
     def masplus(self):
-        self.mas /= 1.5
+        self.mas /= 1.3
         self.repaint()
 
     def paintEvent(self, event):
