@@ -4,20 +4,39 @@ import numpy as np
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QPen
-from PyQt5.QtWidgets import QWidget, QApplication, QPushButton
+from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QMainWindow, QInputDialog
+from first_widget import First
+from graphs import Graphs
+from error import Error
 
-scx = 1000
-scy = 1000
+scx = 500
+scy = 500
+
+class FirstWidget(QMainWindow, First):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+
+        self.pushButton.clicked.connect(self.start)
+
+
+    def start(self):
+        self.second_form = DrawStar()
+        self.second_form.show()
+        self.hide()
 
 
 class DrawStar(QWidget):
     def __init__(self):
         super().__init__()
+
         self.initUI()
         self.mas = 1
 
+
+
     def initUI(self):
-        self.setGeometry(300, 300, scx, scy)
+        self.setGeometry(100, 100, scx, scy)
         self.setWindowTitle('Graph')
 
         self.button_1 = QPushButton(self)
@@ -29,6 +48,18 @@ class DrawStar(QWidget):
         self.button_2.move(100, 40)
         self.button_2.setText("+")
         self.button_2.clicked.connect(self.masplus)
+
+        self.button_back = QPushButton(self)
+        self.button_back.move(scx - 100, scy - 100)
+        self.button_back.setText("SETTINGS")
+        self.button_back.clicked.connect(self.settings)
+
+    def settings(self):
+        self.graphs = GraphsSettings()
+        self.graphs.show()
+
+
+
 
     def masmin(self):
         self.mas *= 1.2
@@ -72,9 +103,10 @@ class DrawStar(QWidget):
         dotsx = np.zeros(scx, dtype=float)
         dotsy = np.zeros(scy, dtype=float)
         pos = 0
+        func = 'sin(x)'
 
         for x in np.linspace(-5 * self.mas, 5 * self.mas, scx):  # задаём точки для графика
-            dotsy[pos] = sin(x)
+            dotsy[pos] = eval(func)
             dotsx[pos] = x
             pos += 1
 
@@ -91,8 +123,41 @@ class DrawStar(QWidget):
         qp.drawLine(scx // 2, 0, scx // 2, scy)
 
 
+class GraphsSettings(QWidget, Graphs):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+
+        self.lineEdit_2.hide()
+        self.lineEdit_3.hide()
+        self.lineEdit_4.hide()
+        self.lineEdit_5.hide()
+        self.COUNT = {2: self.lineEdit_2, 3: self.lineEdit_3, 4: self.lineEdit_4, 5: self.lineEdit_5}
+        self.step = 2
+
+        self.pushButton.clicked.connect(self.add_function)
+
+    def add_function(self):
+        if self.step > 5:
+            self.error = Error()
+            self.error.show()
+
+        else:
+            self.COUNT[self.step].show()
+            self.step += 1
+
+class Error(QWidget, Error):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+
+        self.pushButton.clicked.connect(self.close)
+
+    def close(self):
+        self.hide()
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = DrawStar()
+    ex = FirstWidget()
     ex.show()
     sys.exit(app.exec())
