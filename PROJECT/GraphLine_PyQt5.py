@@ -42,11 +42,22 @@ class DrawGraph(QWidget, Graph):
 
         self.pushButton.clicked.connect(self.add_function)
         self.buttonBox_1.accepted.connect(self.create_function)
-        self.buttonBox_2.accepted.connect(self.create_function2)
+        self.buttonBox_2.accepted.connect(self.create_function)
         self.buttonBox_3.accepted.connect(self.create_function)
         self.buttonBox_4.accepted.connect(self.create_function)
         self.buttonBox_5.accepted.connect(self.create_function)
 
+        self.buttonBox_1.rejected.connect(self.delete)
+        self.buttonBox_2.rejected.connect(self.delete)
+        self.buttonBox_3.rejected.connect(self.delete)
+        self.buttonBox_4.rejected.connect(self.delete)
+        self.buttonBox_5.rejected.connect(self.delete)
+
+        self.pushButton_2.clicked.connect(self.show_parameter)
+        self.pushButton_3.clicked.connect(self.show_parameter)
+        self.pushButton_4.clicked.connect(self.show_parameter)
+        self.pushButton_5.clicked.connect(self.show_parameter)
+        self.pushButton_6.clicked.connect(self.show_parameter)
 
         self.mas = 1
         self.func = 'x ** 2'
@@ -72,6 +83,17 @@ class DrawGraph(QWidget, Graph):
                              self.buttonBox_3: self.lineEdit_12,
                              self.buttonBox_4: self.lineEdit_16,
                              self.buttonBox_5: self.lineEdit_20}
+
+        self.SLIDERS = {self.pushButton_2: [self.horizontalSlider, self.label_2, self.lineEdit_4, self.label_3,
+                                                self.lineEdit_2, self.label_4, self.lineEdit_3],
+                        self.pushButton_3: [self.horizontalSlider_2, self.label_5, self.lineEdit_7, self.label_6,
+                                                  self.lineEdit_6, self.label_7, self.lineEdit_5],
+                        self.pushButton_4: [self.horizontalSlider_3, self.label_9, self.lineEdit_11, self.label_10,
+                                                  self.lineEdit_10, self.label_11, self.lineEdit_9],
+                        self.pushButton_5: [self.horizontalSlider_4, self.label_13, self.lineEdit_15, self.label_14,
+                                                  self.lineEdit_14, self.label_15, self.lineEdit_13],
+                        self.pushButton_6: [self.horizontalSlider_5, self.label_17, self.lineEdit_19, self.label_18,
+                                                  self.lineEdit_18, self.label_19, self.lineEdit_17]}
 
         for i in range(1, len(self.COUNT) + 1):
             new = [j.hide() for j in self.COUNT[i]]
@@ -152,17 +174,16 @@ class DrawGraph(QWidget, Graph):
     def create_function(self):
         self.func = self.BUTTON_BOXES[self.sender()].text()
         print(self.func)
-        #self.graph()
+        # self.graph()
         self.repaint()
 
-    def create_function2(self):
-        self.func = self.BUTTON_BOXES[self.sender()].text()
-        print(self.func)
-        #self.graph()
-        self.repaint()
+    def delete(self):
+        self.BUTTON_BOXES[self.sender()].setText('')
 
-
-
+    def show_parameter(self):
+        for i in self.SLIDERS[self.sender()]:
+            i.show()
+        self.SLIDERS[self.sender()][0].setMinimum()
 
 
 class Error(QWidget, Error):  # лимит на колическтво вводимых функций
