@@ -1,16 +1,19 @@
 import sys
 from math import cos, pi, sin
 import numpy as np
-
+import sqlite3
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QPen
 from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QMainWindow, QInputDialog
 from first_widget import First
-from graph import Graph
+from graph5 import Graph
 from error import Error
+import datetime as dt
+from history import History
 
 scx = 650
 scy = 650
+
 
 class FirstWidget(QMainWindow, First):
     def __init__(self):
@@ -18,12 +21,18 @@ class FirstWidget(QMainWindow, First):
         self.setupUi(self)
 
         self.pushButton.clicked.connect(self.start)
-
+        self.username = self.lineEdit.text()
+        self.pushButton_4.clicked.connect(self.history)
 
     def start(self):
         self.second_form = DrawGraph()
         self.second_form.show()
         self.hide()
+
+    def history(self):
+        self.open = History()
+        self.open.show()
+
 
 
 class DrawGraph(QWidget, Graph):
@@ -33,12 +42,12 @@ class DrawGraph(QWidget, Graph):
         self.button_1 = QPushButton(self)
         self.button_1.move(20, 40)
         self.button_1.setText("-")
-        self.button_1.clicked.connect(self.masmin)
+        self.button_1.clicked.connect(self.masmin) # уменьшнние масшатаба
 
         self.button_2 = QPushButton(self)
         self.button_2.move(100, 40)
         self.button_2.setText("+")
-        self.button_2.clicked.connect(self.masplus)
+        self.button_2.clicked.connect(self.masplus) # увеличесние масштаба
 
         self.pushButton.clicked.connect(self.add_function)
         self.buttonBox_1.accepted.connect(self.create_function)
@@ -59,8 +68,11 @@ class DrawGraph(QWidget, Graph):
         self.pushButton_5.clicked.connect(self.show_parameter)
         self.pushButton_6.clicked.connect(self.show_parameter)
 
+        self.label_21.hide()
+
         self.mas = 1
         self.func = 'x ** 2'
+        self.check = [0, 1, -1]
 
         self.COUNT = {1: [self.horizontalSlider, self.label_2, self.lineEdit_4,
                           self.label_3, self.lineEdit_2, self.label_4, self.lineEdit_3],
@@ -77,7 +89,6 @@ class DrawGraph(QWidget, Graph):
                           self.horizontalSlider_5, self.label_17, self.lineEdit_19,
                           self.label_18, self.lineEdit_18, self.label_19, self.lineEdit_17]}
 
-
         self.BUTTON_BOXES = {self.buttonBox_1: self.lineEdit,
                              self.buttonBox_2: self.lineEdit_8,
                              self.buttonBox_3: self.lineEdit_12,
@@ -85,15 +96,15 @@ class DrawGraph(QWidget, Graph):
                              self.buttonBox_5: self.lineEdit_20}
 
         self.SLIDERS = {self.pushButton_2: [self.horizontalSlider, self.label_2, self.lineEdit_4, self.label_3,
-                                                self.lineEdit_2, self.label_4, self.lineEdit_3],
+                                            self.lineEdit_2, self.label_4, self.lineEdit_3],
                         self.pushButton_3: [self.horizontalSlider_2, self.label_5, self.lineEdit_7, self.label_6,
-                                                  self.lineEdit_6, self.label_7, self.lineEdit_5],
+                                            self.lineEdit_6, self.label_7, self.lineEdit_5],
                         self.pushButton_4: [self.horizontalSlider_3, self.label_9, self.lineEdit_11, self.label_10,
-                                                  self.lineEdit_10, self.label_11, self.lineEdit_9],
+                                            self.lineEdit_10, self.label_11, self.lineEdit_9],
                         self.pushButton_5: [self.horizontalSlider_4, self.label_13, self.lineEdit_15, self.label_14,
-                                                  self.lineEdit_14, self.label_15, self.lineEdit_13],
+                                            self.lineEdit_14, self.label_15, self.lineEdit_13],
                         self.pushButton_6: [self.horizontalSlider_5, self.label_17, self.lineEdit_19, self.label_18,
-                                                  self.lineEdit_18, self.label_19, self.lineEdit_17]}
+                                            self.lineEdit_18, self.label_19, self.lineEdit_17]}
 
         for i in range(1, len(self.COUNT) + 1):
             new = [j.hide() for j in self.COUNT[i]]
@@ -153,18 +164,43 @@ class DrawGraph(QWidget, Graph):
         self.dotsy = np.zeros(scy, dtype=float)
         self.pos = 0
 
+        # проверка, существует ли вводимая функция
+        check = [0, -1, 1]
+        right = False
+        for x in check:
+            try:
+                new = eval(self.func)
+                right = True
+            except:
+                pass
 
-        for x in np.linspace(-5 * self.mas, 5 * self.mas, scx):  # задаём точки для графика
-            self.dotsy[self.pos] = eval(self.func)
-            self.dotsx[self.pos] = x
-            self.pos += 1
+        if right:
 
-        self.dotsx *= (scx / 10) / self.mas
-        self.dotsy *= (scy / 10) / self.mas
+            for x in np.linspace(-5 * self.mas, 5 * self.mas, scx):  # задаём точки для графика
+                self.dotsy[self.pos] = eval(self.func)
+                self.dotsx[self.pos] = x
+                self.pos += 1
 
-        for i in range(len(self.dotsx)):  # рисуем график
-            qp.drawPoint(self.dotsx[i] + scx // 2, scy // 2 - self.dotsy[i])
+            self.dotsx *= (scx / 10) / self.mas
+            self.dotsy *= (scy / 10) / self.mas
 
+            for i in range(len(self.dotsx)):  # рисуем график
+                qp.drawPoint(self.dotsx[i] + scx // 2, scy // 2 - self.dotsy[i])
+
+
+            # подключаемся к базе данных
+            new = 'history_db.sqlite'
+            con = sqlite3.connect(new)
+            cur = con.cursor()
+            time = str(dt.datetime.now())[:-7]
+            print(time)
+            save = f'''INSERT INTO history(name,time) VALUES('{self.func}','{time}');'''
+            print(save)
+            cur.execute(save)
+            con.commit()
+
+        else:
+            self.label_21.show()
         # ещё раз намечаем оси, так как при прорисовке сетки они стали серыми
         pen = QPen(Qt.black, 2)
         qp.setPen(pen)
@@ -172,18 +208,21 @@ class DrawGraph(QWidget, Graph):
         qp.drawLine(scx // 2, 0, scx // 2, scy)
 
     def create_function(self):
+        '''for i in self.SLIDERS:
+            if i.'''
         self.func = self.BUTTON_BOXES[self.sender()].text()
         print(self.func)
         # self.graph()
         self.repaint()
 
     def delete(self):
+        self.label_21.hide()
         self.BUTTON_BOXES[self.sender()].setText('')
 
     def show_parameter(self):
         for i in self.SLIDERS[self.sender()]:
             i.show()
-        self.SLIDERS[self.sender()][0].setMinimum()
+        # self.SLIDERS[self.sender()][0].setMinimum()
 
 
 class Error(QWidget, Error):  # лимит на колическтво вводимых функций
@@ -195,6 +234,27 @@ class Error(QWidget, Error):  # лимит на колическтво ввод�
 
     def close(self):
         self.hide()
+
+class History(QWidget, History):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+
+        self.new = 'history_db.sqlite'
+        self.con = sqlite3.connect(self.new)
+        self.cur = self.con.cursor()
+        self.result = self.cur.execute("""SELECT * FROM history""").fetchall()
+        all = []
+        for i in self.result:
+            data = '\t'.join(list(map(str, i)))
+            all.append(data)
+
+        all = '\n'.join(all)
+        self.textEdit.setText(all)
+
+
+
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
